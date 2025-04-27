@@ -1,0 +1,109 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 221 60% 6%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 10%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 10%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 196 100% 50%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 329 100% 56%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217 33% 20%;
+    --muted-foreground: 215 20% 70%;
+
+    --accent: 261 71% 71%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 33% 20%;
+    --input: 217 33% 20%;
+    --ring: 224 76% 48%;
+
+    --radius: 1.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-gradient-to-br from-cyber-dark to-cyber-deep text-foreground font-inter;
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-space;
+  }
+}
+
+@layer components {
+  .cyber-card {
+    @apply relative bg-black/20 backdrop-blur-lg border border-neon-blue/30 rounded-2xl overflow-hidden;
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+  }
+  
+  .cyber-card::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-neon-blue/10 to-vibrant-purple/10 opacity-30 rounded-2xl;
+    filter: blur(15px);
+    z-index: -1;
+  }
+  
+  .cyber-border {
+    @apply border border-neon-blue/50 relative;
+  }
+  
+  .cyber-border::after {
+    content: '';
+    @apply absolute -inset-px rounded-[inherit] opacity-50;
+    background: linear-gradient(
+      to bottom right,
+      rgba(0, 240, 255, 0.7),
+      rgba(155, 109, 255, 0),
+      rgba(255, 46, 147, 0.7)
+    );
+    z-index: -1;
+  }
+  
+  .neon-text {
+    @apply text-transparent bg-clip-text bg-gradient-to-br from-neon-blue to-vibrant-purple;
+    text-shadow: 0 0 5px rgba(0, 240, 255, 0.5);
+  }
+  
+  .neon-pink-text {
+    @apply text-transparent bg-clip-text bg-gradient-to-r from-vibrant-purple to-electric-pink;
+    text-shadow: 0 0 5px rgba(155, 109, 255, 0.5);
+  }
+  
+  .nav-indicator {
+    @apply absolute -bottom-1 left-0 right-0 h-1 bg-neon-blue transform scale-x-0 transition-transform duration-300;
+  }
+  
+  .active-nav-item .nav-indicator {
+    @apply scale-x-100;
+  }
+  
+  .glass-input {
+    @apply bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/50 focus:ring-neon-blue focus:border-neon-blue;
+    backdrop-filter: blur(4px);
+  }
+}
