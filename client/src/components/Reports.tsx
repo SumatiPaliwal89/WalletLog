@@ -14,10 +14,24 @@ import axios from 'axios';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
+// Utility function to format currency with 2 decimal places
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(amount).replace('₹', '₹');
+};
+
 const Reports = () => {
   const [monthlyData, setMonthlyData] = useState([]);
   const [categoryData, setCategoryData] = useState([]);
-  const [comparisonData, setComparisonData] = useState({ lastMonth: 0, thisMonth: 0, percentChange: 0 });
+  const [comparisonData, setComparisonData] = useState({ 
+    lastMonth: 0, 
+    thisMonth: 0, 
+    percentChange: 0 
+  });
   const [budget, setBudget] = useState<any>(null);
   const [newBudget, setNewBudget] = useState('');
   const [loading, setLoading] = useState(false);
@@ -38,7 +52,7 @@ const Reports = () => {
       };
 
       const [monthlyRes, categoryRes, budgetRes] = await Promise.all([
-        axios.get('http://localhost:3000/api/expenses/monthly', config),
+        axios.get('http://localhost:3000/api/expenses/month', config),
         axios.get('http://localhost:3000/api/expenses/categories', config),
         axios.get('http://localhost:3000/api/budget', config),
       ]);
@@ -69,7 +83,7 @@ const Reports = () => {
 
       await axios.post(
         'http://localhost:3000/api/budget',
-        { monthly_limit: newBudget },
+        { monthly_limit: parseFloat(newBudget) },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -95,12 +109,13 @@ const Reports = () => {
       return (
         <div className="cyber-card p-2 text-xs">
           <p className="text-white/80">{`${label}`}</p>
-          <p className="text-neon-blue font-bold">{`₹${payload[0].value}`}</p>
+          <p className="text-neon-blue font-bold">{formatCurrency(payload[0].value)}</p>
         </div>
       );
     }
     return null;
   };
+
   return (
     <div className="pb-24 px-4 animate-slide-up">
       {/* Budget Section */}
@@ -108,7 +123,7 @@ const Reports = () => {
         <h2 className="text-xl font-bold mb-4 neon-text">Monthly Budget</h2>
         {budget ? (
           <div className="mb-4 text-white/80">
-            Current Budget: <span className="font-bold text-white">₹{budget.monthly_limit}</span>
+            Current Budget: <span className="font-bold text-white">{formatCurrency(budget.monthly_limit)}</span>
           </div>
         ) : (
           <div className="mb-4 text-white/60">No budget set yet</div>
@@ -120,6 +135,8 @@ const Reports = () => {
             value={newBudget}
             onChange={(e) => setNewBudget(e.target.value)}
             className="bg-black/30 text-white placeholder:text-white/40"
+            step="0.01"
+            min="0"
           />
           <Button onClick={handleBudgetSubmit} className="bg-neon-blue hover:bg-neon-blue/80">
             {budget ? 'Update Budget' : 'Set Budget'}
@@ -129,7 +146,7 @@ const Reports = () => {
 
       {/* Monthly Analysis */}
       <div className="cyber-card p-6 mb-6">
-        <h2 className="text-xl font-bold mb-6 neon-text">April 2025 Analysis</h2>
+        <h2 className="text-xl font-bold mb-6 neon-text">Year Analysis</h2>
 
         <div className="h-[200px] mb-6">
           <ResponsiveContainer width="100%" height="100%">
@@ -171,11 +188,11 @@ const Reports = () => {
           </div>
 
           <div className="flex justify-between items-center mt-1">
-            <div className="text-white text-lg font-bold">₹{comparisonData.lastMonth}</div>
+            <div className="text-white text-lg font-bold">{formatCurrency(comparisonData.lastMonth)}</div>
             <div className={`text-xs ${comparisonData.percentChange > 0 ? 'text-electric-pink' : 'text-cyber-green'}`}>
               {comparisonData.percentChange > 0 ? '+' : ''}{comparisonData.percentChange}%
             </div>
-            <div className="text-white text-lg font-bold">₹{comparisonData.thisMonth}</div>
+            <div className="text-white text-lg font-bold">{formatCurrency(comparisonData.thisMonth)}</div>
           </div>
 
           <div className="mt-3 w-full h-2 bg-white/10 rounded-full overflow-hidden">
@@ -195,7 +212,7 @@ const Reports = () => {
             <div key={index}>
               <div className="flex justify-between items-center mb-1">
                 <div className="text-white text-sm">{category.name}</div>
-                <div className="text-white text-sm font-bold">₹{category.amount}</div>
+                <div className="text-white text-sm font-bold">{formatCurrency(category.amount)}</div>
               </div>
 
               <div className="relative w-full h-2 bg-white/10 rounded-full overflow-hidden">
@@ -218,8 +235,6 @@ const Reports = () => {
           ))}
         </div>
       </div>
-
-     
     </div>
   );
 };

@@ -80,43 +80,43 @@ const ReceiptScannerPage = () => {
     reader.readAsDataURL(file);
   };
 
-  const processReceiptImage = async (file: File) => {
-    setIsProcessing(true);
-    setExtractionError(null);
+  // Update the processReceiptImage function in your component
+const processReceiptImage = async (file: File) => {
+  setIsProcessing(true);
+  setExtractionError(null);
 
-    try {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      
-      reader.onload = async () => {
-        const base64String = reader.result as string;
-        
-        const token = localStorage.getItem('token'); // If you have token protected routes
+  try {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    
+    reader.onload = async () => {
+      const base64String = reader.result as string;
+      const token = localStorage.getItem('token');
 
-        const response = await fetch('http://localhost:3000/api/receipt', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token && { Authorization: `Bearer ${token}` }),
-          },
-          body: JSON.stringify({
-            file_data: base64String,
-          }),
-        });
-  
-        if (!response.ok) {
-          throw new Error('Failed to scan receipt');
-        }
-  
-  
-        const data = await response.json();
+      const response = await fetch('http://localhost:3000/api/scan/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify({
+          file_data: base64String.split(',')[1], // Send only the base64 data part
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to scan receipt');
+      }
+
+      const data = await response.json();
       
       // Map Veryfi response to our ReceiptData type
       const processedData: ReceiptData = {
-        merchant: data.vendor?.name || 'Unknown Merchant',
+        merchant: data.merchant || 'Unknown Merchant',
         total: data.total,
         date: data.date || new Date().toISOString().split('T')[0],
-        items: data.line_items || [], // Ensure 'items' is initialized
+        items: data.items || [],
         category: data.category || 'other'
       };
 
@@ -131,17 +131,23 @@ const ReceiptScannerPage = () => {
 
       toast.success('Receipt processed successfully');
     };
-    } catch (error) {
-      console.error('Veryfi processing error:', error);
-      setExtractionError('Failed to extract data from receipt. Please try again or enter details manually.');
-      toast.error('Error processing receipt');
-    } finally {
-      setIsProcessing(false);
+  } catch (error) {
+    console.error('Receipt processing error:', error);
+    
+    let errorMessage = 'Failed to extract data from receipt.';
+    if (error instanceof Error) {
+      errorMessage = error.message;
     }
-  };
-
+    
+    setExtractionError(errorMessage);
+    toast.error(errorMessage, {
+      description: 'Please try again or enter details manually.',
+    });
+  } finally {
+    setIsProcessing(false);
+  }
+};
   
-
   const handleUploadClick = () => {
     if (!fileInputRef.current) return;
     fileInputRef.current.accept = "image/*";
@@ -158,44 +164,71 @@ const ReceiptScannerPage = () => {
     }
   };
 
-  const handleSubmit = async () => {
-    if (!expense.amount || !expense.category) {
-      toast.error('Please provide at least amount and category');
-      return;
+// Update the handleSubmit function in ReceiptScannerPage.tsx
+const handleSubmit = async () => {
+  if (!expense.amount || !expense.category) {
+    toast.error('Please provide at least amount and category', {
+      description: 'These fields are required to save an expense.',
+    });
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Authentication required');
     }
 
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3000/api/expenses', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(expense),
+    // Prepare form data to include the file if available
+    const formData = new FormData();
+    formData.append('amount', expense.amount);
+    formData.append('category', expense.category);
+    formData.append('description', expense.description);
+    formData.append('expense_date', expense.date);
+    
+    // If we have an uploaded image, add it to the form data
+    if (uploadedImage && fileInputRef.current?.files?.[0]) {
+      formData.append('receipt', fileInputRef.current.files[0]);
+    }
+    const response = await fetch('http://localhost:3000/api/expenses', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to save expense');
+    }
+
+    const result = await response.json();
+
+    if (result.warning) {
+      toast.success('Expense saved successfully!', {
+        description: result.warning,
       });
-
-      if (response.ok) {
-        toast.success('Expense saved successfully!');
-        // Reset form
-        setExpense({
-          amount: '',
-          category: '',
-          description: '',
-          date: new Date().toISOString().split('T')[0]
-        });
-        setActiveCategory(null);
-        setUploadedImage(null);
-        setReceiptData(null);
-      } else {
-        throw new Error(await response.text());
-      }
-    } catch (error) {
-      toast.error('Failed to save expense');
-      console.error(error);
+    } else {
+      toast.success('Expense saved successfully!');
     }
-  };
-
+    
+    // Reset form
+    resetForm();
+  } catch (error) {
+    console.error('Expense save error:', error);
+    
+    let errorMessage = 'Failed to save expense';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    
+    toast.error(errorMessage, {
+      description: 'Please check your details and try again.',
+    });
+  }
+};
   const resetForm = () => {
     setExpense({
       amount: '',

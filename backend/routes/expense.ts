@@ -2,7 +2,7 @@
 import express, { Request, Response } from 'express';
 import multer from 'multer';
 import { protectRoute } from '../middleware/auth';
-import { createExpense, getUserExpenses , getMonthlyExpenses, getCategoryBreakdown, getExpenseById} from '../controllers/expenseController';
+import { createExpense, getUserExpenses , getMonthlyExpenses, getCategoryBreakdown, getMonthExpenses, getExpenseById} from '../controllers/expenseController';
 import { Expense } from '../types/tables';
 
 const upload = multer({ 
@@ -68,6 +68,7 @@ router.post(
   }
 );
 
+
 // GET /api/expenses - Get all expenses for current user
 router.get('/', protectRoute, async (req, res) => {
   try {
@@ -82,24 +83,6 @@ router.get('/', protectRoute, async (req, res) => {
   }
 });
 
-
-
-// GET /api/expenses/monthly
-router.get('/monthly', protectRoute, async (req, res) => {
-  try {
-    if (!req.user?.id) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
-    }
-
-    const report = await getMonthlyExpenses(req.user.id);
-    res.json(report);
-  } catch (error) {
-    console.error('Error in monthly report:', error);
-    res.status(500).json({ error: error instanceof Error ? error.message : 'Internal server error' });
-  }
-});
-
 // GET /api/expenses/categories
 router.get('/categories', protectRoute, async (req, res) => {
   try {
@@ -107,11 +90,39 @@ router.get('/categories', protectRoute, async (req, res) => {
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
-
+    console.log('Fetching category breakdown for user:', req.user.id);
     const breakdown = await getCategoryBreakdown(req.user.id);
     res.json({ categories: breakdown });
   } catch (error) {
     console.error('Error in category breakdown:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Internal server error' });
+  }
+});
+
+router.get('/month', protectRoute, async (req, res) => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    const report = await getMonthExpenses(req.user.id);
+    res.json(report);
+  } catch (error) {
+    console.error('Error in monthly report:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Internal server error' });
+  }
+});
+// GET /api/expenses/monthly
+router.get('/monthly', protectRoute, async (req, res) => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    const report = await getMonthlyExpenses(req.user.id);
+    res.json(report);
+  } catch (error) {
+    console.error('Error in monthly report:', error);
     res.status(500).json({ error: error instanceof Error ? error.message : 'Internal server error' });
   }
 });
@@ -137,6 +148,7 @@ router.get('/:id', protectRoute, async (req, res) => {
   }
 }
 );
+
 
 
 export default router;

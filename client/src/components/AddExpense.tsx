@@ -74,7 +74,7 @@ const AddExpense = () => {
     }
   };
 
-  // ... keep existing code (categories array definition)
+
 
   return (
     <div className="pb-24 animate-slide-up px-4">
